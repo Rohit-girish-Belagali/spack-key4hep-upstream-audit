@@ -1,0 +1,5 @@
+[flake8]
+# F403/F405: Spack recipes use `from spack.package import *` by convention.
+# These are false positives in the Spack package context.
+ignore = F403,F405
+max-line-length = 99

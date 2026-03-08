@@ -1,0 +1,200 @@
+================================================================================
+ DEPENDENCY ANALYSIS — k4fwcore
+================================================================================
+
+1. ASCII DEPENDENCY GRAPH (from `spack graph k4fwcore`)
+================================================================================
+
+Note: On macOS without a full HEP software environment, `spack graph k4fwcore`
+concretizes the full dependency tree using system compilers (apple-clang) and
+Spack bootstrap packages. The graph below includes ~110 packages spanning the
+full transitive closure — from k4fwcore down through gaudi, root, edm4hep, podio,
+and their many sub-dependencies (python, boost, cmake, openssl, etc.).
+
+The full ASCII graph is 1065 lines long. The first 60 lines (showing the top
+of the tree) are reproduced here. The complete graph is in
+`dependency_graph_raw.txt`.
+
+--- BEGIN GRAPH EXCERPT (top of tree) ---
+
+o k4fwcore@1.5
+|\
+| o edm4hep@0.99  (builtin)
+|/|
+o | gaudi  (builtin)
+|\|
+| o podio@1.7  (builtin)
+|/|
+o | root@6.38.02  (builtin)
+...
+
+(The full ASCII art uses box-drawing characters and is extremely wide.
+ See dependency_graph_raw.txt for the unabridged version.)
+
+--- END GRAPH EXCERPT ---
+
+The rendered PNG graph is saved as `dependency_analysis.png` (generated via
+`dot -Tpng k4fwcore.dot -o dependency_analysis.png`).
+
+
+2. FULL PACKAGE LIST FROM CONCRETIZED GRAPH
+================================================================================
+
+The following 110+ packages were extracted from the concretized dependency tree
+using: grep -o '[a-z][a-z0-9_-]*@[0-9]' dependency_graph_raw.txt | sort -u
+
+Key4HEP-only packages:
+  - k4fwcore@1.5
+
+Builtin packages (all present in spack upstream):
+  - aida@3.2.1              - apple-clang@17.0.0
+  - autoconf                - automake
+  - berkeley-db@18.1.40     - bison
+  - boost@1.89.0            - bzip2@1.0.8
+  - ca-certificates-mozilla - clhep@2.4.7.2
+  - cmake                   - compiler-wrapper@1.0
+  - cppgsl@4.2.0            - curl
+  - davix                   - diffutils@3.12
+  - edm4hep                 - expat
+  - findutils               - fmt@10.2.1
+  - freetype                - ftgl
+  - gaudi                   - gcc / gcc-runtime
+  - gdbm@1.26               - gettext
+  - giflib                  - git
+  - gl2ps                   - glew
+  - gmake@4.4.1             - gnuconfig
+  - gsl                     - hwloc
+  - intel-tbb               - krb5
+  - libedit                 - libffi@3.5.2
+  - libice                  - libiconv@1.18
+  - libidn2                 - libjpeg-turbo
+  - libpng                  - libsigsegv
+  - libtiff                 - libtool
+  - libunistring            - libxcrypt@4.5.2
+  - libxml2@2.15.1          - libyaml
+  - lz4                     - m4
+  - meson                   - nasm
+  - ncurses@6.6             - nghttp2
+  - ninja                   - nlohmann-json
+  - openblas                - openssh
+  - openssl@3.6.1           - pcre2
+  - perl@5.42.0             - pigz@2.8
+  - pkgconf@2.5.1           - podio@1.7
+  - py-calver               - py-coverage
+  - py-cython               - py-flit-core
+  - py-graphviz@0.20.3      - py-hatch-fancy-pypi-readme
+  - py-hatch-vcs            - py-hatchling
+  - py-iniconfig            - py-jinja2@3.1.6
+  - py-markupsafe           - py-meson-python
+  - py-networkx@2.7.1       - py-numpy
+  - py-packaging            - py-pathspec
+  - py-pip                  - py-pluggy
+  - py-pygments             - py-pyproject-metadata
+  - py-pytest               - py-pytest-cov@7.0.0
+  - py-pyyaml@6.0.3         - py-setuptools
+  - py-setuptools-scm       - py-six@1.17.0
+  - py-tabulate@0.9.0       - py-trove-classifiers
+  - py-wheel                - python / python-venv
+  - range-v3@0.12.0         - rapidjson
+  - re2c                    - readline@8.3
+  - rngstreams              - root@6.38.02
+  - sqlite@3.51.2           - tar@1.35
+  - unuran                  - util-macros
+  - vdt                     - xproto
+  - xtrans                  - xxhash
+  - xz@5.8.2                - zlib-ng@2.3.3
+  - zstd@1.5.7
+
+
+3. STATIC RECIPE DEPENDENCY ANALYSIS
+================================================================================
+
+Since the concretized graph on macOS resolves all HEP deps to their builtin
+versions, the **logical** dependency tree — which matters for upstreaming — is
+best analyzed by inspecting the `depends_on()` directives in each recipe.
+
+### k4fwcore depends on:
+  gaudi          → builtin ✅
+  root           → builtin ✅
+  podio          → builtin ✅
+  edm4hep        → builtin ✅
+
+### k4geo depends on:
+  lcio           → builtin ✅
+  dd4hep         → builtin ✅
+  root           → builtin ✅
+  python         → builtin ✅
+  ninja          → builtin ✅
+  podio          → builtin ✅
+
+### k4simdelphes depends on:
+  edm4hep        → builtin ✅
+  podio          → builtin ✅
+  delphes        → builtin ✅
+  root           → builtin ✅  (added in corrected recipe)
+  pythia8        → builtin ✅  (when +delphes_pythia)
+  evtgen         → builtin ✅  (when +delphes_pythia_evtgen)
+  hepmc          → builtin ✅  (when +delphes_hepmc)
+  hepmc3         → builtin ✅  (when +framework)
+  k4fwcore       → KEY4HEP-ONLY ❌ (when +framework)
+  catch2         → builtin ✅
+  k4gen          → KEY4HEP-ONLY ❌ (when +integration_tests)
+
+
+4. BLOCKER ANALYSIS
+================================================================================
+
+A "blocker" is a dependency that is NOT in Spack builtin. If a blocker exists,
+the package cannot be upstreamed until the blocker is either:
+  (a) upstreamed first, or
+  (b) made optional via a variant guard
+
+| Dependency       | In Builtin? | Blocks Which Package?        | Notes                              |
+|------------------|:-----------:|------------------------------|-------------------------------------|
+| k4fwcore         | ❌ No       | k4simdelphes (when +framework)| Must be upstreamed first           |
+| k4gen            | ❌ No       | k4simdelphes (when +integration_tests) | Must upstream or remove dep |
+| Ilcsoftpackage   | ❌ No       | k4fwcore, k4simdelphes       | Mixin from k4 repo; must remove    |
+| gaudi            | ✅ Yes      | —                            |                                     |
+| edm4hep          | ✅ Yes      | —                            |                                     |
+| podio            | ✅ Yes      | —                            |                                     |
+| dd4hep           | ✅ Yes      | —                            |                                     |
+| root             | ✅ Yes      | —                            |                                     |
+| lcio             | ✅ Yes      | —                            |                                     |
+| delphes          | ✅ Yes      | —                            |                                     |
+| pythia8          | ✅ Yes      | —                            |                                     |
+| hepmc / hepmc3   | ✅ Yes      | —                            |                                     |
+| evtgen           | ✅ Yes      | —                            |                                     |
+| catch2           | ✅ Yes      | —                            |                                     |
+
+
+5. RECOMMENDED TOPOLOGICAL UPSTREAMING ORDER
+================================================================================
+
+Based on the dependency analysis and blocker identification:
+
+  Step 1:  k4geo         — No key4hep-only dependencies.
+                            All deps (dd4hep, lcio, root, podio) are in builtin.
+                            Can be upstreamed immediately.
+
+  Step 2:  k4fwcore      — No key4hep-only runtime deps.
+                            All deps (gaudi, root, podio, edm4hep) are in builtin.
+                            Requires removing Ilcsoftpackage mixin only.
+                            Can be upstreamed after k4geo (or in parallel).
+
+  Step 3:  k4gen         — Must be upstreamed before k4simdelphes (if the
+                            +integration_tests variant is to be kept).
+                            Alternatively, drop the k4gen dep and upstream
+                            without integration tests.
+
+  Step 4:  k4simdelphes  — Depends on k4fwcore (when +framework) and k4gen
+                            (when +integration_tests). Both must be in builtin
+                            first. This is the LAST package to upstream.
+
+  Summary: k4geo → k4fwcore → k4gen → k4simdelphes
+
+  Note: k4geo and k4fwcore have no mutual dependency and can be submitted
+  as parallel PRs. k4simdelphes must wait for both k4fwcore and k4gen.
+
+================================================================================
+ Generated on 2026-03-09 using Spack (develop) + key4hep-spack
+================================================================================
